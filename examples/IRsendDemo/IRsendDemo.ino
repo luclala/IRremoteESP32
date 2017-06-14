@@ -27,13 +27,13 @@
  *     for your first time. e.g. ESP-12 etc.
  */
 
-#include <IRsend.h>
+#include "IRsend.h"
 
 IRsend irsend(4);  // an IR led is connected to GPIO pin 4 (D2)
 
 void setup() {
   irsend.begin();
-  Serial.begin(115200, SERIAL_8N1, SERIAL_TX_ONLY);
+  Serial.begin(115200);
 }
 
 void loop() {

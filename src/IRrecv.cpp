@@ -8,7 +8,7 @@
 #ifndef UNIT_TEST
 extern "C" {
   #include <gpio.h>
-  #include <user_interface.h>
+//  #include <user_interface.h>
 }
 #include <Arduino.h>
 #endif
