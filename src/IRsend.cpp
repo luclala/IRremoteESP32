@@ -18,6 +18,7 @@
 // Originally from https://github.com/shirriff/Arduino-IRremote/
 // Updated by markszabo (https://github.com/markszabo/IRremoteESP8266) for
 // sending IR code on ESP8266
+// Ported to ESP32 by luclala (https://github.com/luclala/IRremoteESP32)
 
 // IRsend ----------------------------------------------------------------------
 // Create an IRsend object.

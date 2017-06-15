@@ -16,8 +16,8 @@ extern "C" {
 #include "IRremoteESP8266.h"
 
 #ifdef UNIT_TEST
-#undef ICACHE_RAM_ATTR
-#define ICACHE_RAM_ATTR
+#undef IRAM_ATTR
+#define IRAM_ATTR
 #endif
 // Updated by Sebastien Warin (http://sebastien.warin.fr) for receiving IR code
 // on ESP8266
@@ -31,20 +31,25 @@ static ETSTimer timer;
 volatile irparams_t irparams;
 
 #ifndef UNIT_TEST
-static void ICACHE_RAM_ATTR read_timeout(void *arg __attribute__((unused))) {
-  os_intr_lock();
+static void IRAM_ATTR read_timeout(void *arg __attribute__((unused))) {
+  ets_intr_lock();
   if (irparams.rawlen)
     irparams.rcvstate = STATE_STOP;
-  os_intr_unlock();
+  ets_intr_unlock();
 }
 
-static void ICACHE_RAM_ATTR gpio_intr() {
+static void IRAM_ATTR gpio_intr() {
   uint32_t now = system_get_time();
-  uint32_t gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);
   static uint32_t start = 0;
+  ets_timer_disarm(&timer);
 
-  os_timer_disarm(&timer);
-  GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status);
+  uint32_t gpio_intr_status_l=0;
+  uint32_t gpio_intr_status_h=0;
+
+  gpio_intr_status_l = GPIO.status;
+  gpio_intr_status_h = GPIO.status1.val;
+  GPIO.status_w1tc = gpio_intr_status_l;//Clear intr for gpio0-gpio31
+  GPIO.status1_w1tc.val = gpio_intr_status_h;//Clear intr for gpio32-39
 
   // Grab a local copy of rawlen to reduce instructions used in IRAM.
   // This is an ugly premature optimisation code-wise, but we do everything we
@@ -75,7 +80,7 @@ static void ICACHE_RAM_ATTR gpio_intr() {
 
   start = now;
   #define ONCE 0
-  os_timer_arm(&timer, TIMEOUT_MS, ONCE);
+  ets_timer_arm(&timer, TIMEOUT_MS, ONCE);
 }
 #endif  // UNIT_TEST
 
@@ -91,9 +96,8 @@ void IRrecv::enableIRIn() {
 
 #ifndef UNIT_TEST
   // Initialize timer
-  os_timer_disarm(&timer);
-  os_timer_setfn(&timer, reinterpret_cast<os_timer_func_t *>(read_timeout),
-                 NULL);
+  ets_timer_disarm(&timer);
+  ets_timer_setfn(&timer, &read_timeout,NULL);
 
   // Attach Interrupt
   attachInterrupt(irparams.recvpin, gpio_intr, CHANGE);
@@ -102,7 +106,7 @@ void IRrecv::enableIRIn() {
 
 void IRrecv::disableIRIn() {
 #ifndef UNIT_TEST
-  os_timer_disarm(&timer);
+  ets_timer_disarm(&timer);
   detachInterrupt(irparams.recvpin);
 #endif
 }
